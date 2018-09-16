@@ -32,11 +32,15 @@ var server = http.createServer(app);
   //app.use(app.router);
   // the following middlewares are only necessary for the mounted 'dashboard' app, 
   // but express needs it on the parent app (?) and it therefore pollutes the api
-bodyParser=require('body-parser')
+var bodyParser=require('body-parser')
+var methodOverride=require('method-override')
+var cookieParser=require('cookie-parser')
+var cookieSession=require('cookie-session')
+
 app.use(bodyParser);
-app.use(express.methodOverride());
-app.use(express.cookieParser('Z5V45V6B5U56B7J5N67J5VTH345GC4G5V4'));
-app.use(express.cookieSession({
+app.use(methodOverride);
+app.use(cookieParser('Z5V45V6B5U56B7J5N67J5VTH345GC4G5V4'));
+app.use(cookieSession({
   key:    'uptime',
   secret: 'FZ5HEE5YHD3E566756234C45BY4DSFZ4',
   proxy:  true,
@@ -62,17 +66,20 @@ config.plugins.forEach(function(pluginName) {
 
 app.emit('beforeFirstRoute', app, apiApp);
 
-app.configure('development', function() {
+
+if(process.env.NODE_ENV === 'development') {
   if (config.verbose) mongoose.set('debug', true);
   app.use(express.static(__dirname + '/public'));
   app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
-});
+  // additional prod environemtn configuration
+}
 
-app.configure('production', function() {
+
+if(process.env.NODE_ENV === 'production') {
   var oneYear = 31557600000;
   app.use(express.static(__dirname + '/public', { maxAge: oneYear }));
   app.use(express.errorHandler());
-});
+}
 
 // Routes
 app.emit('beforeApiRoutes', app, apiApp);
@@ -93,14 +100,14 @@ app.emit('afterLastRoute', app);
 // Sockets
 var io = socketIo.listen(server);
 
-io.configure('production', function() {
+if(process.env.NODE_ENV === 'production') {
   io.enable('browser client etag');
   io.set('log level', 1);
-});
+}
 
-io.configure('development', function() {
+if(process.env.NODE_ENV === 'development') {
   if (!config.verbose) io.set('log level', 1);
-});
+}
 
 CheckEvent.on('afterInsert', function(event) {
   io.sockets.emit('CheckEvent', event.toJSON());
