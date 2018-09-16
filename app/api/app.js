@@ -12,17 +12,26 @@ var debugErrorHandler = function() {
 }
 
 // middleware
-app.configure(function(){
-  app.use(app.router);
-});
+//app.use(app.router);
 
-app.configure('development', debugErrorHandler);
-
-app.configure('test', debugErrorHandler);
-
-app.configure('production', function(){
+if(process.env.NODE_ENV === 'production') {
   app.use(express.errorHandler());
-});
+  // additional prod environemtn configuration
+}
+
+
+if(process.env.NODE_ENV === 'development') {
+  app.use(debugErrorHandler)
+  // additional prod environemtn configuration
+}
+
+
+if(process.env.NODE_ENV === 'test') {
+  app.use(debugErrorHandler)
+  // additional prod environemtn configuration
+}
+
+
 
 
 // up count
